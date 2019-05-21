@@ -1,0 +1,74 @@
+version: '2.0'
+
+services:
+  api:
+    image: dockerfile/nodejs
+    build: api
+    # command: "export NODE_ENV=dev"
+    command: "npm start"
+    # depends_on:
+      # - mysql
+    # env_file:
+    #   - .env
+    ports:
+      - "5000:5000"
+    # environment:
+    #   - NODE_ENV=dev
+    user: "root"
+    volumes:
+      # - ./api
+      - ./api:/home/node/app
+      # - /home/node/app/documentation
+      - /home/node/app/node_modules:/api/node_modules
+      # - public:/home/node/app/public
+
+  # mysql:
+  #   image: mysql:5.7
+  #   environment:
+  #     MYSQL_USER: ${MYSQL_USER}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+  #     MYSQL_DATABASE: ${MYSQL_DB}
+  #   ports:
+  #     - "13306:3306"
+  #   restart: always
+  #   volumes:
+  #     - ./database:/var/lib/mysql
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_PORT: 3306
+  #     PMA_USER: ${MYSQL_USER}
+  #     PMA_PASSWORD: ${MYSQL_PASSWORD}
+  #   ports:
+  #     - "18080:80"
+  #   restart: always
+
+  # proxy:
+  #   build: proxy
+  #   depends_on:
+  #     - api
+  #     - web
+  #   ports:
+  #     - "81:80"
+
+  # web:
+  #   build: web
+  #   command: "npm start"
+  #   depends_on:
+  #     - api
+  #   environment:
+  #     - NODE_ENV=development
+  #     - CHOKIDAR_USEPOLLING=true
+  #   ports:
+  #     - "3000:3000"
+  #     - "35729:35729"
+  #   user: "root"
+  #   volumes:
+  #     - ./web:/home/node/app
+  #     - /home/node/app/node_modules
+
+volumes:
+  data: {}
+  public: {}
