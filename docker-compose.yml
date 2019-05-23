@@ -2,73 +2,95 @@ version: '2.0'
 
 services:
   api:
-    image: dockerfile/nodejs
-    build: api
-    # command: "export NODE_ENV=dev"
+    build: todos-api
     command: "npm start"
-    # depends_on:
-      # - mysql
-    # env_file:
-    #   - .env
+    environment:
+      - NODE_ENV=local
     ports:
-      - "5000:5000"
-    # environment:
-    #   - NODE_ENV=dev
-    user: "root"
+      - "${API_PORT}:7000"
+    #user: "root"
+    networks:
+      - main
     volumes:
-      # - ./api
-      - ./api:/home/node/app
-      # - /home/node/app/documentation
-      - /home/node/app/node_modules:/api/node_modules
-      # - public:/home/node/app/public
+      - ./todos-api:/home/node/app
+      - /home/node/app/node_modules
 
-  # mysql:
-  #   image: mysql:5.7
-  #   environment:
-  #     MYSQL_USER: ${MYSQL_USER}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-  #     MYSQL_DATABASE: ${MYSQL_DB}
-  #   ports:
-  #     - "13306:3306"
-  #   restart: always
-  #   volumes:
-  #     - ./database:/var/lib/mysql
-  # phpmyadmin:
-  #   image: phpmyadmin/phpmyadmin
-  #   environment:
-  #     PMA_HOST: mysql
-  #     PMA_PORT: 3306
-  #     PMA_USER: ${MYSQL_USER}
-  #     PMA_PASSWORD: ${MYSQL_PASSWORD}
-  #   ports:
-  #     - "18080:80"
-  #   restart: always
+  front:
+    build: todos-fe
+    command: "npm start"
+    depends_on:
+      - api
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "${FRONT_PORT}:4200"
+    #user: "root"
+    networks:
+      - main
+    volumes:
+      - ./todos-fe:/home/node/app
+      - /home/node/app/node_modules
+  
+  proxy:
+    build: proxy
+    depends_on:
+      - api
+      - front
+    networks:
+      - main
+    ports:
+      - "${PROXY_PORT}:80"
 
-  # proxy:
-  #   build: proxy
-  #   depends_on:
-  #     - api
-  #     - web
-  #   ports:
-  #     - "81:80"
+  magneto-web:
+    build: magneto-web
+    ports:
+      - "${BACK_PORT}:80"
+    tty: true
+    restart: always
+    networks:
+        - main
+    volumes:
+      - ./magneto-web/htdocs:/var/www/html
+    links:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_DATABASE: samplest_magento
+      DB_USERNAME: ranosys
+      DB_PASSWORD: ranosys@123
+  mysql:
+    image: mysql:5.7
+    restart: always
+    networks:
+        - main
+    volumes:
+      - ./mysql:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      MYSQL_DATABASE: samplest_magento
+      MYSQL_USER: ranosys
+      MYSQL_PASSWORD: ranosys@123
+      MYSQL_ROOT_PASSWORD: ranosys@123
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:edge-4.8
+    container_name: phpmyadmin
+    environment:
+        PMA_ARBITRARY: 0
+        PMA_HOST: "mysql"
+        PMA_PORT: 3306
+        PMA_USER: "ranosys"
+        PMA_PASSWORD: "ranosys@123"
+    restart: always
+    ports:
+        - "${PMA_PORT}:80"
+    links:
+        - mysql
+    volumes:
+        - /sessions
+    networks:
+      - main
 
-  # web:
-  #   build: web
-  #   command: "npm start"
-  #   depends_on:
-  #     - api
-  #   environment:
-  #     - NODE_ENV=development
-  #     - CHOKIDAR_USEPOLLING=true
-  #   ports:
-  #     - "3000:3000"
-  #     - "35729:35729"
-  #   user: "root"
-  #   volumes:
-  #     - ./web:/home/node/app
-  #     - /home/node/app/node_modules
-
-volumes:
-  data: {}
-  public: {}
+networks:
+  main:
+    driver: bridge
