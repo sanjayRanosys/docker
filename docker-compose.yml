@@ -1,11 +1,19 @@
 version: '2.0'
 
 services:
+  redis:
+    image: redis
+    container_name: cache
+    expose:
+      - 6379
   api:
     build: todos-api
     command: "npm start"
+    links:
+      - redis
     environment:
       - NODE_ENV=local
+      - REDIS_URL=redis://cache
     ports:
       - "${API_PORT}:7000"
     #user: "root"
